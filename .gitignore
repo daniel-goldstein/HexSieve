@@ -1,4 +1,5 @@
 utils/
+hex
 bitsievegen
 readsieve
 *.gch

@@ -8,15 +8,15 @@
 
 # Location of the CUDA toolkit
 # In ubuntu (all debian based distros?) this is /usr/local/cuda
-CUDA_DIR = /opt/cuda
+CUDA_DIR = /usr/local/cuda
 # Location of the *necessary* legacy gcc compiler for nvcc to use.  Maximum
 # supported version is 5.4.  In ubuntu, this will be located in /usr/bin/
 # from scratch: sudo apt install g++-4.9
 # then change LEGACY_CC_PATH to /usr/bin/g++-4.9
-LEGACY_CC_PATH = /bin/g++-5
+LEGACY_CC_PATH = /usr/bin/g++-5
 # Compute capability of the target GPU
-GPU_ARCH = compute_30
-GPU_CODE = sm_30,sm_32,sm_35,sm_37,sm_50,sm_52,sm_53,sm_60,sm_61,sm_62
+GPU_ARCH = compute_61
+GPU_CODE = sm_61
 
 
 # Compilers to use
@@ -28,7 +28,7 @@ WIGNORE = -Wno-return-stack-address
 
 # Flags for nvcc
 # ptxas-options=-dlcm=cg (vs. default of ca) is about a 2% performance gain
-NVCC_FLAGS = -ccbin $(LEGACY_CC_PATH) -std=c++11 -arch=$(GPU_ARCH) -code=$(GPU_CODE) \
+NVCC_FLAGS = -ccbin $(LEGACY_CC_PATH) -O3 -std=c++11 -arch=$(GPU_ARCH) -code=$(GPU_CODE) \
 --ptxas-options=-dlcm=cs
 
 INCLUDES = -I ./include/ -I ./src/ -I $(CUDA_DIR)/include/
@@ -54,9 +54,15 @@ NVOBJS = $(patsubst %,$(OBJ_DIR)/%,$(_NVOBJS))
 MAIN = cudasieve
 CS_LIB = lib$(MAIN).a
 
-all: $(MAIN) commands
+HEX = hex
+
+all: $(HEX) commands
 
 test: cstest
+
+$(HEX): $(MAIN) $(CS_LIB)
+	@$(NVCC) -Xcompiler -fopenmp -lgomp $(INCLUDES) $(NVCC_FLAGS) $(LIB_DIR) -l$(MAIN) src/$(HEX).cpp -o $@
+	@echo "     CUDA     " $@
 
 # Tack on a main() function for the CLI
 $(MAIN): $(MAIN_OBJ) $(CS_LIB)
@@ -104,6 +110,7 @@ clean:
 	rm -f cstest
 	rm -f include/CUDASieve/*.gch
 	rm -f src/CUDASieve/*.gch
+        rm -f hex
 
 # samples
 samples: samples/sumPrimes
