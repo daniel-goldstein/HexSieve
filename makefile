@@ -110,7 +110,7 @@ clean:
 	rm -f cstest
 	rm -f include/CUDASieve/*.gch
 	rm -f src/CUDASieve/*.gch
-        rm -f hex
+	rm -f hex
 
 # samples
 samples: samples/sumPrimes
