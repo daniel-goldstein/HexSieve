@@ -34,6 +34,10 @@ int main(int argc, char **argv) {
     // run code with argument = number of billions to calculate to
     int billions = atoi(argv[1]);
 
+    // the billion to start on and its corresponding color
+    int startBillion = atoi(argv[2]);
+    int startColor = atoi(argv[3]);
+
     int* colors = new int [billions];
 
     double start, elapsed_time;
@@ -42,10 +46,10 @@ int main(int argc, char **argv) {
 
     start = CLOCK();
     #pragma omp parallel for
-    for (uint64_t j = 0; j < billions; j++){
-        if (j == 0) printf ("Number of threads: %d\n", omp_get_num_threads());
+    for (uint64_t j = startBillion; j < billions + startBillion; j++){
+        if (j == startBillion) printf ("Number of threads: %d\n", omp_get_num_threads());
 
-        uint64_t bottom = j*pow(10,9);
+        uint64_t bottom = j * pow(10,9);
         uint64_t top    = bottom + pow(10,9);
         size_t   len;
 
@@ -74,7 +78,7 @@ int main(int argc, char **argv) {
             }
           }
         }
-        colors[j] = color;
+        colors[j - startBillion] = color;
 
         // must be freed with this call b/c page-locked memory is used.
         cudaFreeHost(primes);
@@ -82,10 +86,14 @@ int main(int argc, char **argv) {
 
     elapsed_time = CLOCK() - start;
     printf ("Execution time to calculate %d billions: %f ms\n", billions, elapsed_time);
-    printf("%d Billion: %d\n", 1, colors[0]);
+
+    // shift the first billion based on the input
+    colors[0] = shift(startColor, colors[0]);
+
+    printf("%d Billion: %d\n", startBillion + 1, colors[0]);
     for(uint64_t i = 1; i < billions; i++) {
         colors[i] = shift(colors[i-1], colors[i]);
-        printf("%" PRIu64 " Billion: %d\n", i+1, colors[i]);
+        printf("%" PRIu64 " Billion: %d\n", i + startBillion + 1, colors[i]);
     }
 
     delete colors;
